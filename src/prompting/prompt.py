@@ -2,6 +2,8 @@ from string import Formatter
 
 
 
+empty = object()
+
 
 class Prompt():
 
@@ -15,8 +17,8 @@ class Prompt():
 
     def __init__(self, prompt: str, *args, **kwargs):
         self.prompt = prompt
-        self.values = dict(zip(self.get_keys(prompt), [None])) #irgendwas falsch
-        for x in args:  self.set(x)
+        self.values = {key: empty for key in self.get_keys(prompt)}
+        for x in args: self.set(x)
         for x in kwargs: self.set(x)
         
 
@@ -29,8 +31,12 @@ class Prompt():
             key = x[0]
             value = x[1]
         else:
-            key = next(self.values.keys())
-            value = x
+            try:
+                key = next((key for key, value in self.values.items() if value is empty))
+                value = x
+
+            except:
+                raise IndexError("no valid keys left!")
 
         self.values[key] = value
 
@@ -38,7 +44,7 @@ class Prompt():
     def __str__(self):
         return self.format()
         
-    #TODO:
+
     def format(self, *args, **kwargs): 
-        return self.prompt.format(**kwargs)
+        return self.prompt.format(*args, **{**{key: value for key, value in self.values.items() if value is not empty}, **kwargs})
 
